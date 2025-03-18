@@ -5,20 +5,17 @@ from wtforms import StringField, SelectMultipleField
 from flask_wtf import FlaskForm
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-from models.booze import Base, Cocktail, Ingredient, cocktail_ingredient_association
+from models.booze import Base, Cocktail, Ingredient, Amount, cocktail_ingredient_association
 
 # Flask App Setup
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'  # Required for Flask-Admin
 
-# SQLite Database Setup
-DATABASE_URL = "sqlite:///booze.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-Session = sessionmaker(bind=engine)
-session = Session()
+from database import Session
+
 
 # Initialize Flask-Admin
-admin = Admin(app, name='Cocktail Admin', template_mode='bootstrap3')
+admin = Admin(app, name='Cocktail Admin', template_mode='bootstrap4')
 
 # Cocktail and Ingredient Models (already defined above)
 
@@ -26,20 +23,25 @@ admin = Admin(app, name='Cocktail Admin', template_mode='bootstrap3')
 class CocktailView(ModelView):
     
     # Display columns for the Cocktail view
-    column_list = ('name', 'ingredients')  # Show cocktail name and its ingredients in the list view
+    column_list = ('name', 'ingredients', 'price')  # Show cocktail name and its ingredients in the list view
     
     # Custom form handling for cocktails
-    form_columns = ['name', 'ingredients']
+    form_columns = ['name', 'ingredients', 'price']
     
 
         
         
 class IngredientView(ModelView):
-    column_list = ('name', 'amount','unit')
+    column_list = ('name','amounts.amount' ,'amounts.unit')
+    
+    
+class AmountView(ModelView):
+    column_list = ( 'amount', 'unit') 
 
 # Add the view to Flask-Admin
-admin.add_view(CocktailView(Cocktail, session))
-admin.add_view(IngredientView(Ingredient, session))
-Base.metadata.create_all(engine)
+admin.add_view(CocktailView(Cocktail, Session()))
+admin.add_view(IngredientView(Ingredient, Session()))
+admin.add_view(AmountView(Amount ,Session()))
+
 if __name__ == '__main__':
     app.run(debug=True)
